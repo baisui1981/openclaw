@@ -1,41 +1,5 @@
 # 🦞 OpenClaw — Personal AI Assistant
 
-<p align="center">
-    <picture>
-        <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/openclaw/openclaw/main/docs/assets/openclaw-logo-text-dark.png">
-        <img src="https://raw.githubusercontent.com/openclaw/openclaw/main/docs/assets/openclaw-logo-text.png" alt="OpenClaw" width="500">
-    </picture>
-</p>
-
-<p align="center">
-  <strong>EXFOLIATE! EXFOLIATE!</strong>
-</p>
-
-<p align="center">
-  <a href="https://github.com/openclaw/openclaw/actions/workflows/ci.yml?branch=main"><img src="https://img.shields.io/github/actions/workflow/status/openclaw/openclaw/ci.yml?branch=main&style=for-the-badge" alt="CI status"></a>
-  <a href="https://github.com/openclaw/openclaw/releases"><img src="https://img.shields.io/github/v/release/openclaw/openclaw?include_prereleases&style=for-the-badge" alt="GitHub release"></a>
-  <a href="https://discord.gg/clawd"><img src="https://img.shields.io/discord/1456350064065904867?label=Discord&logo=discord&logoColor=white&color=5865F2&style=for-the-badge" alt="Discord"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
-</p>
-
-**OpenClaw** is a _personal AI assistant_ you run on your own devices.
-It answers you on the channels you already use (WhatsApp, Telegram, Slack, Discord, Google Chat, Signal, iMessage, Microsoft Teams, WebChat), plus extension channels like BlueBubbles, Matrix, Zalo, and Zalo Personal. It can speak and listen on macOS/iOS/Android, and can render a live Canvas you control. The Gateway is just the control plane — the product is the assistant.
-
-If you want a personal, single-user assistant that feels local, fast, and always-on, this is it.
-
-[Website](https://openclaw.ai) · [Docs](https://docs.openclaw.ai) · [DeepWiki](https://deepwiki.com/openclaw/openclaw) · [Getting Started](https://docs.openclaw.ai/start/getting-started) · [Updating](https://docs.openclaw.ai/install/updating) · [Showcase](https://docs.openclaw.ai/start/showcase) · [FAQ](https://docs.openclaw.ai/start/faq) · [Wizard](https://docs.openclaw.ai/start/wizard) · [Nix](https://github.com/openclaw/nix-clawdbot) · [Docker](https://docs.openclaw.ai/install/docker) · [Discord](https://discord.gg/clawd)
-
-Preferred setup: run the onboarding wizard (`openclaw onboard`). It walks through gateway, workspace, channels, and skills. The CLI wizard is the recommended path and works on **macOS, Linux, and Windows (via WSL2; strongly recommended)**.
-Works with npm, pnpm, or bun.
-New install? Start here: [Getting started](https://docs.openclaw.ai/start/getting-started)
-
-**Subscriptions (OAuth):**
-
-- **[Anthropic](https://www.anthropic.com/)** (Claude Pro/Max)
-- **[OpenAI](https://openai.com/)** (ChatGPT/Codex)
-
-Model note: while any model is supported, I strongly recommend **Anthropic Pro/Max (100/200) + Opus 4.5** for long‑context strength and better prompt‑injection resistance. See [Onboarding](https://docs.openclaw.ai/start/onboarding).
-
   基于我对代码的分析，这个 OpenClaw 项目是一个个人 AI
   助手系统，其核心的"规划-执行-观察"模式体现在以下几个关键组件中：
 
@@ -44,7 +8,7 @@ Model note: while any model is supported, I strongly recommend **Anthropic Pro/M
   1. 主执行循环 (src/agents/pi-embedded-runner/run.ts:308)
 
   这是整个系统的核心 agentic 循环：
-
+```
   while (true) {
     attemptedThinking.add(thinkLevel);
     await fs.mkdir(resolvedWorkspace, { recursive: true });
@@ -63,7 +27,7 @@ Model note: while any model is supported, I strongly recommend **Anthropic Pro/M
 
     // 根据观察结果决定是否继续循环
   }
-
+```
   关键特点：
   - 无限循环直到任务完成或遇到不可恢复的错误
   - 每次迭代都是一个完整的"计划-执行-观察"周期
@@ -79,7 +43,7 @@ Model note: while any model is supported, I strongly recommend **Anthropic Pro/M
   3. 观察和状态管理 (src/agents/pi-embedded-subscribe.ts)
 
   这个订阅系统负责观察 AI 代理的执行过程：
-
+```
   const state: EmbeddedPiSubscribeState = {
     assistantTexts: [],        // 收集助手的文本输出
     toolMetas: [],             // 工具执行的元数据
@@ -87,7 +51,7 @@ Model note: while any model is supported, I strongly recommend **Anthropic Pro/M
     lastToolError: undefined,  // 最后的工具错误
     // ... 更多状态
   };
-
+```
   观察的内容包括：
   - 助手的文本输出（流式和完整）
   - 工具调用和结果
@@ -99,6 +63,7 @@ Model note: while any model is supported, I strongly recommend **Anthropic Pro/M
   系统实现了复杂的观察-反应机制：
 
   上下文溢出处理 (run.ts:374-409)：
+```
   if (isContextOverflowError(errorText)) {
     if (!isCompactionFailure && !overflowCompactionAttempted) {
       log.warn(`context overflow detected; attempting auto-compaction`);
@@ -110,8 +75,9 @@ Model note: while any model is supported, I strongly recommend **Anthropic Pro/M
       }
     }
   }
-
+```
   认证配置文件轮换 (run.ts:249-274)：
+ ```
   const advanceAuthProfile = async (): Promise<boolean> => {
     if (lockedProfileId) return false;
 
@@ -129,8 +95,9 @@ Model note: while any model is supported, I strongly recommend **Anthropic Pro/M
     }
     return false;
   };
-
+```
   思维级别降级 (run.ts:500-509)：
+```
   const fallbackThinking = pickFallbackThinkingLevel({
     message: errorText,
     attempted: attemptedThinking,
@@ -140,7 +107,7 @@ Model note: while any model is supported, I strongly recommend **Anthropic Pro/M
     thinkLevel = fallbackThinking;
     continue; // 用新的思维级别重试
   }
-
+```
   5. 工具系统 (src/agents/tools/)
 
   工具是执行阶段的核心组件，包括：
